@@ -32,8 +32,7 @@ dnf remove -y \
     gnome-shell-extension-places-menu \
     gnome-shell-extension-window-list \
     gnome-classic-session \
-    fedora-flathub-remote \
-    fedora-workstation-repositories
+    fedora-flathub-remote
 
 # Install packages that are needed in the final image
 dnf install -y \
