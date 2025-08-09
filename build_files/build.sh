@@ -14,7 +14,9 @@ dnf install -y \
 
 # Setup VSCode repository
 rpm --import https://packages.microsoft.com/keys/microsoft.asc
-echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | tee /etc/yum.repos.d/vscode.repo > /dev/null
+echo -e \
+    "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" \
+    | tee /etc/yum.repos.d/vscode.repo > /dev/null
 
 # Remove packages that are not needed in the final image
 dnf remove -y \
@@ -26,7 +28,6 @@ dnf remove -y \
     gnome-shell-extension-places-menu \
     gnome-shell-extension-window-list \
     gnome-classic-session \
-    fedora-third-party \
     fedora-flathub-remote \
     fedora-workstation-repositories
 
@@ -49,9 +50,6 @@ dnf install -y \
     helix \
     discord
 
-# Enable Flathub repository
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-
 # Configure system
 # grep -E '^docker:' /usr/lib/group | tee -a /etc/group
 # usermod --shell /usr/bin/fish $USER
@@ -65,13 +63,13 @@ dnf install -y \
     google-noto-sans-fonts \
     jetbrains-mono-nerd-fonts
 
-# Disable repository so they don't end up enabled on the final image:
+# Remove repository so they don't end up enabled on the final image:
 dnf remove -y \
     rpmfusion-free-release \
     rpmfusion-nonfree-release
-dnf -y copr disable atim/starship
-dnf -y copr disable atim/bottom
-dnf -y copr disable harryjph/fonts
+dnf -y copr remove atim/starship
+dnf -y copr remove atim/bottom
+dnf -y copr remove harryjph/fonts
 rm /etc/yum.repos.d/vscode.repo
 
 # Install GNOME extensions
