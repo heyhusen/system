@@ -22,6 +22,9 @@ echo -e \
     "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" \
     | tee /etc/yum.repos.d/vscode.repo > /dev/null
 
+# Update system
+dnf update -y
+
 # Remove packages that are not needed in the final image
 dnf remove -y \
     gnome-tour \
