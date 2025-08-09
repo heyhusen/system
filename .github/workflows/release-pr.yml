@@ -111,6 +111,8 @@ jobs:
           git add CHANGELOG.md
           git commit -m "chore: release ${{ steps.changelog.outputs.version }}"
           git push origin release/${{ steps.changelog.outputs.version }} -f
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create PR with changelog notes
         run: |
