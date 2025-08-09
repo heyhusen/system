@@ -2,13 +2,6 @@
 
 set -ouex pipefail
 
-### Install packages
-
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
-
 # Enable COPR repository
 dnf -y copr enable atim/starship
 dnf -y copr enable atim/bottom
@@ -23,7 +16,7 @@ dnf install -y \
 rpm --import https://packages.microsoft.com/keys/microsoft.asc
 echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | tee /etc/yum.repos.d/vscode.repo > /dev/null
 
-# remove packages that are not needed in the final image
+# Remove packages that are not needed in the final image
 dnf remove -y \
     gnome-tour \
     gnome-initial-setup \
@@ -61,6 +54,8 @@ flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flat
 
 # Configure system
 # grep -E '^docker:' /usr/lib/group | tee -a /etc/group
+# usermod --shell /usr/bin/fish $USER
+# usermod -aG docker $USER
 
 # Enable a System Unit File
 systemctl enable docker
@@ -80,4 +75,5 @@ dnf -y copr disable harryjph/fonts
 rm /etc/yum.repos.d/vscode.repo
 
 # Install GNOME extensions
-# gnome-extensions install https://extensions.gnome.org/extension-data/nightthemeswitcherromainvigier.fr.v79.shell-extension.zip
+# gnome-extensions install \
+# https://extensions.gnome.org/extension-data/nightthemeswitcherromainvigier.fr.v79.shell-extension.zip

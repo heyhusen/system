@@ -10,6 +10,7 @@ on:
         default: false
         type: boolean
       platform:
+        description: "Platform to build for"
         required: true
         type: choice
         options:
@@ -24,10 +25,12 @@ on:
       - './.github/workflows/build-disk.yml'
 
 env:
-  IMAGE_NAME: ${{ github.event.repository.name }} # output of build.yml, keep in sync
+  IMAGE_NAME: os # output of build.yml, keep in sync
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
-  DEFAULT_TAG: "latest"
-  BIB_IMAGE: "ghcr.io/lorbuschris/bootc-image-builder:20250608" # "quay.io/centos-bootc/bootc-image-builder:latest" - see https://github.com/osbuild/bootc-image-builder/pull/954
+  DEFAULT_TAG: "42"
+  BIB_IMAGE: "ghcr.io/lorbuschris/bootc-image-builder:20250608" 
+  # "quay.io/centos-bootc/bootc-image-builder:latest" - see 
+  # https://github.com/osbuild/bootc-image-builder/pull/954
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
