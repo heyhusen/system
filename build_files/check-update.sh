@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ouex pipefail
+
 CHANGELOG="CHANGELOG.md"
 
 # Step 1: Get list of available updates
