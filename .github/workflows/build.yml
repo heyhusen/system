@@ -1,16 +1,16 @@
 name: Build container image
 
 on:
-  pull_request:
-    branches:
-      - main
-  schedule:
-    - cron: '05 10 * * *'  # 10:05am UTC everyday
   push:
     branches:
       - main
     paths-ignore:
       - '**/README.md'
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '05 10 * * *'  # 10:05am UTC everyday
 
 env:
   IMAGE_DESC: "My customized immutable system based on Fedora Silverblue."
@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_push:
+  build:
     name: Build and push image
     runs-on: ubuntu-24.04
 
@@ -41,9 +41,8 @@ jobs:
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
           echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
 
-      # These stage versions are pinned by https://github.com/renovatebot/renovate
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@v4
 
       # This is optional, but if you see that your builds are way too big for 
       # the runners, you can enable this by uncommenting the following lines:
@@ -64,24 +63,49 @@ jobs:
           # https://linux.die.net/man/1/date
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
+      - name: Extract version from merged branch name
+        id: get_version
+        run: |
+          PR_BRANCH=$(git log -1 --pretty=%B | grep -oE 'release/v[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+          VERSION=${PR_BRANCH#release/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog section for this version
+        id: extract_notes
+        if: ${{ steps.get_version.outputs.version != '' }}
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          VERSION_NO_V=${VERSION#v}
+          START_LINE=$(grep -nE "^## \[${VERSION_NO_V}\]" CHANGELOG.md | cut -d: -f1)
+          NEXT_LINE=$(tail -n +$((START_LINE+1)) CHANGELOG.md | grep -nE "^## \[[0-9]+\.[0-9]+\.[0-9]+\]" | head -n 1 | cut -d: -f1)
+          if [ -z "$NEXT_LINE" ]; then
+            END_LINE=$(wc -l < CHANGELOG.md)
+          else
+            END_LINE=$((START_LINE + NEXT_LINE - 2))
+          fi
+          sed -n "${START_LINE},${END_LINE}p" CHANGELOG.md > release_notes.md
+
+      - name: Configure git as GitHub Actions bot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
       # Image metadata for https://artifacthub.io/ - This is optional but is 
       # highly recommended so we all can get a index of all the custom images
       # The metadata by itself is not going to do anything, you choose if you 
       # want your image to be on ArtifactHub or not.
       - name: Image Metadata
-        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
+        uses: docker/metadata-action@v5
         id: metadata
         with:
           # This generates all the tags for your image, you can add custom tags 
           # here too!
-          # Default tags are "$DEFAULT_TAG" and "$DEFAULT_TAG.$date".
           tags: |
             type=edge,branch=main
-            type=raw,value=latest,enable=${{ github.event_name == 'schedule' }}
-            type=raw,value=${{ env.DEFAULT_TAG }},enable=${{ github.event_name == 'schedule' }}
-            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}},enable=${{ github.event_name == 'schedule' }}
-            type=raw,value={{date 'YYYYMMDD'}},enable=${{ github.event_name == 'schedule' }}
-            type=ref,event=pr
+            type=ref,event=branch
+            type=semver,pattern={{version}},value=${{ steps.get_version.outputs.version }},enable=${{ steps.get_version.outputs.version != '' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.get_version.outputs.version }},enable=${{ steps.get_version.outputs.version != '' }}
+            type=semver,pattern={{major}},value=${{ steps.get_version.outputs.version }},enable=${{ steps.get_version.outputs.version != '' }}
             type=sha
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/refs/heads/main/README.md
@@ -152,7 +176,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push To GHCR
+      - name: Push to Registry
         uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
         id: push
         env:
@@ -182,3 +206,14 @@ jobs:
           TAGS: ${{ steps.push.outputs.digest }}
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+
+      - name: Create tag and release
+        if: ${{ steps.get_version.outputs.version != '' }}
+        run: |
+          git tag ${{ steps.get_version.outputs.version }}
+          git push origin ${{ steps.get_version.outputs.version }}
+          gh release create ${{ steps.get_version.outputs.version }} \
+            --title "${{ steps.get_version.outputs.version }}" \
+            --notes-file release_notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
