@@ -81,8 +81,8 @@ jobs:
             type=raw,value=${{ env.DEFAULT_TAG }},enable=${{ github.event_name == 'schedule' }}
             type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYYYMMDD'}},enable=${{ github.event_name == 'schedule' }}
             type=raw,value={{date 'YYYYMMDD'}},enable=${{ github.event_name == 'schedule' }}
-            type=sha,enable=${{ github.event_name == 'pull_request' }}
             type=ref,event=pr
+            type=sha
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/refs/heads/main/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}

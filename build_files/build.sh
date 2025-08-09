@@ -12,6 +12,10 @@ dnf install -y \
     https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
     https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
+# Enable the Terra repository
+dnf install -y --nogpgcheck --repofrompath \
+    'terra,https://repos.fyralabs.com/terra$releasever' terra-release
+
 # Setup VSCode repository
 rpm --import https://packages.microsoft.com/keys/microsoft.asc
 echo -e \
@@ -48,7 +52,8 @@ dnf install -y \
     gnome-tweaks \
     gnome-shell-extension-appindicator \
     helix \
-    discord
+    discord \
+    mission-center
 
 # Configure system
 # grep -E '^docker:' /usr/lib/group | tee -a /etc/group
@@ -66,7 +71,8 @@ dnf install -y \
 # Remove repository so they don't end up enabled on the final image:
 dnf remove -y \
     rpmfusion-free-release \
-    rpmfusion-nonfree-release
+    rpmfusion-nonfree-release \
+    terra-release
 dnf -y copr remove atim/starship
 dnf -y copr remove atim/bottom
 dnf -y copr remove harryjph/fonts
